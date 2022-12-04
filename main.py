@@ -1,27 +1,24 @@
+import requests
+from bs4 import BeautifulSoup
 from fastapi import FastAPI
-from pydantic import BaseModel
 
 app = FastAPI()
 
-class Msg(BaseModel):
-    msg: str
-
-
 @app.get("/")
-async def root():
-    return {"message": "Hello World. Welcome to FastAPI!"}
+def root():
+    BASE_URL = "https://sadykhan.kz"
+    URL = f"{BASE_URL}/malysh-i-mama/"
+    page = requests.get(URL)
+    soup = BeautifulSoup(page.content, "html.parser")
+    products = soup.find_all("div", class_="product-item")
 
+    yo = []
+    for p in products:
+        image = p.find('img')
+        src = f'{BASE_URL}{image["src"]}'
+        title = p.find("span", class_="content-title")
+        price = p.find('span', class_="price")
+        res = {"image": src, "title": title.text, "price": price.text}
+        yo.append(res)
 
-@app.get("/path")
-async def demo_get():
-    return {"message": "This is /path endpoint, use a post request to transform the text to uppercase"}
-
-
-@app.post("/path")
-async def demo_post(inp: Msg):
-    return {"message": inp.msg.upper()}
-
-
-@app.get("/path/{path_id}")
-async def demo_get_path_id(path_id: int):
-    return {"message": f"This is /path/{path_id} endpoint, use post request to retrieve result"}
+    return yo
